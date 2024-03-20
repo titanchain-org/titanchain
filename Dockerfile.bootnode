@@ -1,0 +1,24 @@
+FROM golang:1.19-alpine as builder
+
+RUN apk add --no-cache make gcc musl-dev linux-headers
+
+ADD . /titanchain
+RUN cd /titanchain && make bootnode
+
+RUN chmod +x /titanchain/build/bin/bootnode
+
+FROM alpine:latest
+
+LABEL maintainer="etienne@titanchain.com"
+
+WORKDIR /titanchain
+
+COPY --from=builder /titanchain/build/bin/bootnode /usr/local/bin/bootnode
+
+COPY docker/bootnode ./
+
+EXPOSE 30301
+
+ENTRYPOINT ["./entrypoint.sh"]
+
+CMD ["-verbosity", "6", "-nodekey", "bootnode.key", "--addr", ":30301"]
